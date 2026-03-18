@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { Integration } from "../../../packages/types/integration";
+import type { Integration } from "@syncforge/types";
 
 const integrations: Integration[] = [];
 

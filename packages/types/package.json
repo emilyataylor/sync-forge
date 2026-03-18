@@ -1,0 +1,10 @@
+{
+	"name": "@syncforge/types",
+	"version": "0.1.0",
+	"main": "./integration.ts",
+	"types": "./integration.ts",
+	"files": [
+		"integration.ts"
+	],
+	"sideEffects": false
+}
