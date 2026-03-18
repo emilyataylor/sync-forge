@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import { Integration } from "../../../packages/types/integration";
+
+const integrations: Integration[] = [];
 
 const app = express();
 
@@ -12,6 +15,16 @@ app.use(
 
 app.get("/health", (req, res) => {
 	res.json({ status: "ok" });
+});
+
+app.get("/api/integrations", (req, res) => {
+	res.json(integrations);
+});
+
+app.post("/api/integrations", (req, res) => {
+	const newIntegration = { ...req.body, id: Date.now().toString() };
+	integrations.push(newIntegration);
+	res.json(newIntegration);
 });
 
 export default app;
