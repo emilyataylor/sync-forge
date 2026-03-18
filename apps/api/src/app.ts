@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import type { Integration } from "@syncforge/types";
+import integrationsRouter from "./routes/integrations";
 
 const integrations: Integration[] = [];
 
@@ -16,6 +17,8 @@ app.use(
 app.get("/health", (req, res) => {
 	res.json({ status: "ok" });
 });
+
+app.use("/api/integrations", integrationsRouter);
 
 app.get("/api/integrations", (req, res) => {
 	res.json(integrations);

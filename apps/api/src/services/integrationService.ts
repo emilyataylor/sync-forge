@@ -1,11 +1,22 @@
-import { integrationQueue } from "../queue/integrationQueue";
+import Redis from "ioredis";
+
+const redis = new Redis();
 
 export async function triggerIntegrationSync(integrationId: string) {
 	console.log(`[API] Queuing integration sync for ID: ${integrationId}`);
 
-	await integrationQueue.add("sync-integration", {
-		integrationId,
-	});
+	try {
+		// Push to Redis list (for Go worker)
+		await redis.lpush(
+			"integration-jobs",
+			JSON.stringify({ integrationId }),
+		);
 
-	return { message: "Job queued" };
+		console.log(`[API] Job queued: ${integrationId}`);
+
+		return { message: "Job queued" };
+	} catch (error) {
+		console.error(`[API] Failed to queue job: ${integrationId}`, error);
+		throw error;
+	}
 }
