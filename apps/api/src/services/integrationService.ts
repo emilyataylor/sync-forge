@@ -9,7 +9,11 @@ export async function triggerIntegrationSync(integrationId: string) {
 		// Push to Redis list (for Go worker)
 		await redis.lpush(
 			"integration-jobs",
-			JSON.stringify({ integrationId }),
+			JSON.stringify({
+				integrationId,
+				attempt: 1,
+				maxAttempts: 3,
+			}),
 		);
 
 		console.log(`[API] Job queued: ${integrationId}`);

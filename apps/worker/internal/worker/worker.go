@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"syncforge/worker/internal/jobs"
 
@@ -33,6 +34,35 @@ func Start(client *redis.Client) {
 
 		log.Println("[Worker] Processing job:", job.IntegrationID)
 
-		processJob(job)
+		err = processJob(job)
+
+		if err != nil {
+			log.Println("[Worker] Job failed:", job.IntegrationID, "Attempt:", job.Attempt)
+
+			if job.Attempt < job.MaxAttempts {
+				job.Attempt++
+
+				// Exponential backoff to avoid instant retries
+				delay := time.Duration(1<<job.Attempt) * time.Second
+				log.Println("[Worker] Backing off for:", delay)
+
+				time.Sleep(delay)
+
+				log.Println("[Worker] Retrying job:", job.IntegrationID, "Next attempt:", job.Attempt)
+
+				// Requeue job
+				updatedJobJSON, _ := json.Marshal(job)
+				client.LPush(ctx, "integration-jobs", updatedJobJSON)
+
+			} else {
+				log.Println("[Worker] Job permanently failed:", job.IntegrationID)
+
+				// dead letter queue for permanently failed jobs
+				updatedJobJSON, _ := json.Marshal(job)
+				client.LPush(ctx, "failed-jobs", updatedJobJSON)
+			}
+
+			continue
+		}
 	}
 }
