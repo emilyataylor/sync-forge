@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import type { Integration } from "@syncforge/types";
 import integrationsRouter from "./routes/integrations";
+import jobRoutes from "./routes/jobs";
 
 const integrations: Integration[] = [];
 
@@ -14,17 +15,18 @@ app.use(
 	}),
 );
 
+app.use("/jobs", jobRoutes);
+app.use("/integrations", integrationsRouter);
+
 app.get("/health", (req, res) => {
 	res.json({ status: "ok" });
 });
 
-app.use("/api/integrations", integrationsRouter);
-
-app.get("/api/integrations", (req, res) => {
+app.get("/integrations", (req, res) => {
 	res.json(integrations);
 });
 
-app.post("/api/integrations", (req, res) => {
+app.post("/integrations", (req, res) => {
 	const newIntegration = { ...req.body, id: Date.now().toString() };
 	integrations.push(newIntegration);
 	res.json(newIntegration);

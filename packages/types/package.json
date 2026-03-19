@@ -4,7 +4,8 @@
 	"main": "./integration.ts",
 	"types": "./integration.ts",
 	"files": [
-		"integration.ts"
+		"integration.ts",
+		"job.ts"
 	],
 	"sideEffects": false
 }

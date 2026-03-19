@@ -1,15 +1,73 @@
 import { useEffect, useState } from "react";
-import type { Integration } from "../../../packages/types/integration";
+import type { Job, Integration } from "@syncforge/types";
+import {
+	createIntegration,
+	getIntegrations,
+	getJob,
+	syncIntegration,
+} from "./client";
 
 function App() {
 	const [integrations, setIntegrations] = useState<Array<Integration>>([]);
+	const [integrationJobs, setIntegrationJobs] = useState<
+		Record<string, string>
+	>({});
+	const [jobs, setJobs] = useState<Record<string, Job>>({});
+
+	const getStatusColor = (status?: string) => {
+		switch (status) {
+			case "pending":
+				return "orange";
+			case "processing":
+				return "blue";
+			case "completed":
+				return "green";
+			case "failed":
+				return "red";
+			default:
+				return "gray";
+		}
+	};
+
+	const handleSync = async (integrationId: string) => {
+		syncIntegration(integrationId)
+			.then(({ jobId }) => {
+				setIntegrationJobs((prev) => ({
+					...prev,
+					[integrationId]: jobId,
+				}));
+			})
+			.catch((err) => console.error(err));
+	};
 
 	useEffect(() => {
-		fetch("http://localhost:3000/api/integrations")
-			.then((res) => res.json())
+		getIntegrations()
 			.then((data) => setIntegrations(data))
 			.catch((err) => console.error(err));
 	}, []);
+
+	useEffect(() => {
+		if (Object.keys(integrationJobs).length === 0) return;
+
+		const interval = setInterval(async () => {
+			const jobIds = Object.values(integrationJobs);
+
+			const results = await Promise.all(jobIds.map((id) => getJob(id)));
+
+			setJobs((prev) => {
+				const updated = { ...prev };
+
+				results.forEach((job, i) => {
+					if (!job) return;
+					updated[jobIds[i]] = job;
+				});
+
+				return updated;
+			});
+		}, 2000);
+
+		return () => clearInterval(interval);
+	}, [integrationJobs]);
 	return (
 		<>
 			<h1>SyncForge Dashboard</h1>
@@ -17,15 +75,10 @@ function App() {
 				onSubmit={(e) => {
 					e.preventDefault();
 					const formData = new FormData(e.currentTarget);
-					fetch("http://localhost:3000/api/integrations", {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							name: formData.get("name"),
-							type: formData.get("type"),
-						}),
+					createIntegration({
+						name: formData.get("name") as string,
+						type: formData.get("type") as string,
 					})
-						.then((res) => res.json())
 						.then((data) =>
 							setIntegrations([...integrations, data]),
 						)
@@ -39,13 +92,39 @@ function App() {
 			</form>
 
 			<h2>Integrations</h2>
-			<ul>
-				{integrations.map((integration) => (
-					<li key={integration.id}>
-						{integration.name} ({integration.type})
-					</li>
-				))}
-			</ul>
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Status</th>
+						<th>Attempts</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				{integrations.map((integration) => {
+					const jobId = integrationJobs[integration.id];
+					const job = jobId ? jobs[jobId] : undefined;
+					return (
+						<tr key={integration.id}>
+							<td>{integration.name}</td>
+							<td>{integration.type}</td>
+							<td style={{ color: getStatusColor(job?.status) }}>
+								{job?.status || "idle"}
+							</td>
+							<td>{job?.attempt ?? "-"}</td>
+							<td>
+								<button
+									disabled={job?.status === "processing"}
+									onClick={() => handleSync(integration.id)}
+								>
+									Sync
+								</button>
+							</td>
+						</tr>
+					);
+				})}
+			</table>
 		</>
 	);
 }

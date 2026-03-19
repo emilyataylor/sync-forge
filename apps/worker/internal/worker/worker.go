@@ -34,6 +34,9 @@ func Start(client *redis.Client) {
 
 		log.Println("[Worker] Processing job:", job.IntegrationID)
 
+		job.Status = "processing"
+		updateJobStatus(client, job)
+
 		err = processJob(job)
 
 		if err != nil {
@@ -41,6 +44,10 @@ func Start(client *redis.Client) {
 
 			if job.Attempt < job.MaxAttempts {
 				job.Attempt++
+
+				job.Status = "pending"
+
+				updateJobStatus(client, job)
 
 				// Exponential backoff to avoid instant retries
 				delay := time.Duration(1<<job.Attempt) * time.Second
@@ -57,6 +64,9 @@ func Start(client *redis.Client) {
 			} else {
 				log.Println("[Worker] Job permanently failed:", job.IntegrationID)
 
+				job.Status = "failed"
+				updateJobStatus(client, job)
+
 				// dead letter queue for permanently failed jobs
 				updatedJobJSON, _ := json.Marshal(job)
 				client.LPush(ctx, "failed-jobs", updatedJobJSON)
@@ -64,5 +74,8 @@ func Start(client *redis.Client) {
 
 			continue
 		}
+
+		job.Status = "completed"
+		updateJobStatus(client, job)
 	}
 }

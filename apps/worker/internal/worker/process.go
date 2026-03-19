@@ -22,3 +22,4 @@ func processJob(job jobs.Job) error {
 	log.Println("[Worker] Completed job:", job.IntegrationID)
 	return nil
 }
+

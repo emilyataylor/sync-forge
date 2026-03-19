@@ -1,12 +1,14 @@
 import { triggerIntegrationSync } from "../services/integrationService";
 
-export async function syncIntegration(
-	req: { params: { id: any } },
-	res: { json: (arg0: { message: string }) => void },
-) {
+import { Request, Response } from "express";
+export const syncIntegration = async (req: Request, res: Response) => {
 	const { id } = req.params;
+
+	if (typeof id !== "string") {
+		return res.status(400).json({ error: "Invalid integration id" });
+	}
 
 	const result = await triggerIntegrationSync(id);
 
-	res.json(result);
-}
+	res.json({ jobId: result.jobId });
+};
