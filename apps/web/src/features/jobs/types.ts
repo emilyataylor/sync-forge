@@ -1,1 +1,6 @@
-export type JobStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED";
+export type JobStatus =
+	| "PENDING"
+	| "PROCESSING"
+	| "COMPLETED"
+	| "FAILED"
+	| "IDLE";

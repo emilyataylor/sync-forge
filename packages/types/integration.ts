@@ -8,7 +8,7 @@ export type Integration = {
 export type Job = {
 	id: string;
 	integrationId: string;
-	status: "pending" | "processing" | "completed" | "failed";
+	status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 	attempt: number;
 	maxAttempts: number;
 	createdAt: string;

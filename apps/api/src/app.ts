@@ -4,7 +4,20 @@ import type { Integration } from "@syncforge/types";
 import integrationsRouter from "./routes/integrations";
 import jobRoutes from "./routes/jobs";
 
-const integrations: Integration[] = [];
+const integrations: Integration[] = [
+	{
+		id: "1",
+		name: "GitHub Repo Sync",
+		type: "github",
+		createdAt: new Date().toISOString(),
+	},
+	{
+		id: "2",
+		name: "Salesforce CRM Sync",
+		type: "salesforce",
+		createdAt: new Date().toISOString(),
+	},
+];
 
 const app = express();
 

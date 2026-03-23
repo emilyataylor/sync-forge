@@ -34,7 +34,7 @@ func Start(client *redis.Client) {
 
 		log.Println("[Worker] Processing job:", job.IntegrationID)
 
-		job.Status = "processing"
+		job.Status = "PROCESSING"
 		updateJobStatus(client, job)
 
 		err = processJob(job)
@@ -45,7 +45,7 @@ func Start(client *redis.Client) {
 			if job.Attempt < job.MaxAttempts {
 				job.Attempt++
 
-				job.Status = "pending"
+				job.Status = "PENDING"
 
 				updateJobStatus(client, job)
 
@@ -64,7 +64,7 @@ func Start(client *redis.Client) {
 			} else {
 				log.Println("[Worker] Job permanently failed:", job.IntegrationID)
 
-				job.Status = "failed"
+				job.Status = "FAILED"
 				updateJobStatus(client, job)
 
 				// dead letter queue for permanently failed jobs
@@ -75,7 +75,7 @@ func Start(client *redis.Client) {
 			continue
 		}
 
-		job.Status = "completed"
+		job.Status = "COMPLETED"
 		updateJobStatus(client, job)
 	}
 }

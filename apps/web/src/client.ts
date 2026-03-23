@@ -5,7 +5,11 @@ export async function getIntegrations() {
 	return res.json();
 }
 
-export async function createIntegration(data: { name: string; type: string }) {
+export async function createIntegration(data: {
+	name: string;
+	type: string;
+	api_key: string;
+}) {
 	const res = await fetch(`${BASE_URL}/integrations`, {
 		method: "POST",
 		headers: {
