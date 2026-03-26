@@ -1,7 +1,10 @@
 import Redis from "ioredis";
 import { Request, Response } from "express";
 
-const redis = new Redis();
+const redis = new Redis({
+	host: process.env.REDIS_HOST || "localhost",
+	port: Number(process.env.REDIS_PORT || 6379),
+});
 
 export const getJob = async (req: Request, res: Response) => {
 	const { id } = req.params;

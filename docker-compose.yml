@@ -1,18 +1,64 @@
-version: "3.8"
-
 services:
     postgres:
         image: postgres:15
         container_name: syncforge_postgres
         restart: always
         environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: password
-            POSTGRES_DB: syncforge
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
         ports:
-            - "5432:5432"
+            - "${POSTGRES_PORT:-5432}:5432"
         volumes:
             - postgres_data:/var/lib/postgresql/data
-
+    redis:
+        image: redis:7-alpine
+        container_name: syncforge_redis
+        restart: always
+        ports:
+            - "${REDIS_PORT:-6379}:6379"
+    api:
+        build:
+            context: .
+            dockerfile: ./apps/api/Dockerfile
+        container_name: syncforge_api
+        restart: always
+        environment:
+            NODE_ENV: ${API_NODE_ENV:-production}
+            PORT: ${API_PORT:-3000}
+            DATABASE_URL: ${API_DATABASE_URL}
+            CORS_ORIGIN: ${API_CORS_ORIGIN:-http://localhost:5173}
+            REDIS_HOST: ${API_REDIS_HOST:-redis}
+            REDIS_PORT: ${API_REDIS_PORT:-6379}
+        ports:
+            - "${API_PORT:-3000}:3000"
+        depends_on:
+            - postgres
+            - redis
+    worker:
+        build:
+            context: ./apps/worker
+            dockerfile: Dockerfile
+        container_name: syncforge_worker
+        restart: always
+        environment:
+            REDIS_HOST: ${WORKER_REDIS_HOST:-redis}
+            REDIS_PORT: ${WORKER_REDIS_PORT:-6379}
+            DATABASE_URL: ${WORKER_DATABASE_URL}
+        depends_on:
+            - postgres
+            - redis
+    web:
+        build:
+            context: .
+            dockerfile: ./apps/web/Dockerfile
+            args:
+                VITE_API_URL: ${WEB_VITE_API_URL:-http://localhost:3000}
+        container_name: syncforge_web
+        restart: always
+        ports:
+            - "${WEB_PORT:-5173}:80"
+        depends_on:
+            - api
 volumes:
     postgres_data:

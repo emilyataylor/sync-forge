@@ -2,6 +2,19 @@
 
 A full-stack platform for managing third-party API integrations with asynchronous job processing.
 
+## Environment Setup
+
+- Copy `.env.example` to `.env` in the repo root for Docker Compose config.
+- Copy `apps/api/.env.example` to `apps/api/.env` for local API runs.
+- Copy `apps/worker/.env.example` to `apps/worker/.env` for local worker runs.
+- Copy `apps/web/.env.example` to `apps/web/.env` for local web runs.
+
+Start the stack with:
+
+```bash
+docker compose up -d --build
+```
+
 ## Tech Stack
 
 - React (TypeScript)

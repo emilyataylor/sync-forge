@@ -24,7 +24,7 @@ const app = express();
 app.use(express.json());
 app.use(
 	cors({
-		origin: "http://localhost:5173",
+		origin: process.env.CORS_ORIGIN || "http://localhost:5173",
 	}),
 );
 
@@ -44,5 +44,35 @@ app.post("/integrations", (req, res) => {
 	integrations.push(newIntegration);
 	res.json(newIntegration);
 });
+
+app.use((req, res) => {
+	res.status(404).json({
+		error: "Route not found",
+		path: req.originalUrl,
+	});
+});
+
+app.use(
+	(
+		err: Error,
+		req: express.Request,
+		res: express.Response,
+		next: express.NextFunction,
+	) => {
+		if (res.headersSent) {
+			return next(err);
+		}
+
+		console.error("[API] Unhandled error:", err);
+
+		return res.status(500).json({
+			error: "Internal Server Error",
+			message:
+				process.env.NODE_ENV === "production"
+					? "An unexpected error occurred"
+					: err.message,
+		});
+	},
+);
 
 export default app;
