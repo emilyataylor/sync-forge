@@ -37,6 +37,11 @@ export const createIntegration = async (
 	next: NextFunction,
 ) => {
 	try {
+		const encryptionKey = process.env.API_ENCRYPTION_KEY;
+		if (!encryptionKey) {
+			throw new Error("API_ENCRYPTION_KEY is required");
+		}
+
 		const { name, type, api_key: apiKey } = req.body;
 
 		if (
@@ -54,9 +59,9 @@ export const createIntegration = async (
 
 		const result = await pool.query(
 			`INSERT INTO integrations (name, type, api_key)
-			 VALUES ($1, $2, $3)
+			 VALUES ($1, $2, pgp_sym_encrypt($3, $4))
 			 RETURNING id, name, type, created_at`,
-			[name.trim(), type.trim(), apiKey.trim()],
+			[name.trim(), type.trim(), apiKey.trim(), encryptionKey],
 		);
 
 		return res.status(201).json(mapIntegrationRow(result.rows[0]));

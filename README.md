@@ -9,6 +9,10 @@ A full-stack platform for managing third-party API integrations with asynchronou
 - Copy `apps/worker/.env.example` to `apps/worker/.env` for local worker runs.
 - Copy `apps/web/.env.example` to `apps/web/.env` for local web runs.
 
+Required security variable:
+
+- `API_ENCRYPTION_KEY` (used to encrypt `integrations.api_key` via pgcrypto)
+
 Start the stack with:
 
 ```bash

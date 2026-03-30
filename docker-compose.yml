@@ -27,6 +27,7 @@ services:
             NODE_ENV: ${API_NODE_ENV:-production}
             PORT: ${API_PORT:-3000}
             DATABASE_URL: ${API_DATABASE_URL}
+            API_ENCRYPTION_KEY: ${API_ENCRYPTION_KEY}
             CORS_ORIGIN: ${API_CORS_ORIGIN:-http://localhost:5173}
             REDIS_HOST: ${API_REDIS_HOST:-redis}
             REDIS_PORT: ${API_REDIS_PORT:-6379}

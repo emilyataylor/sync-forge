@@ -24,5 +24,26 @@ function readSchemaSql() {
 }
 
 export async function ensureDatabaseSchema() {
-	await pool.query(readSchemaSql());
+	const encryptionKey = process.env.API_ENCRYPTION_KEY;
+	if (!encryptionKey) {
+		throw new Error(
+			"API_ENCRYPTION_KEY is required for database encryption",
+		);
+	}
+
+	const client = await pool.connect();
+	try {
+		await client.query("BEGIN");
+		await client.query(
+			"SELECT set_config('app.encryption_key', $1, true)",
+			[encryptionKey],
+		);
+		await client.query(readSchemaSql());
+		await client.query("COMMIT");
+	} catch (error) {
+		await client.query("ROLLBACK");
+		throw error;
+	} finally {
+		client.release();
+	}
 }

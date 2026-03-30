@@ -4,9 +4,25 @@ CREATE TABLE IF NOT EXISTS integrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   type TEXT NOT NULL,
-  api_key TEXT NOT NULL,
+  api_key BYTEA NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'integrations'
+      AND column_name = 'api_key'
+      AND data_type IN ('text', 'character varying')
+  ) THEN
+    ALTER TABLE integrations
+      ALTER COLUMN api_key TYPE BYTEA
+      USING pgp_sym_encrypt(api_key::text, current_setting('app.encryption_key'));
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
