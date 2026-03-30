@@ -1,5 +1,6 @@
 import type { Job } from "@syncforge/types";
 import JobStatusBadge from "./JobStatusBadge";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
 	jobs: Job[];
@@ -14,6 +15,8 @@ export default function JobList({
 	loading,
 	error,
 }: Props) {
+	const navigate = useNavigate();
+
 	return (
 		<div className="border rounded-xl p-4 text-left">
 			{integrationId && (
@@ -22,9 +25,7 @@ export default function JobList({
 				</p>
 			)}
 
-			{loading && (
-				<p className="text-gray-600">Loading jobs...</p>
-			)}
+			{loading && <p className="text-gray-600">Loading jobs...</p>}
 
 			{error && <p className="text-red-600 text-sm">{error}</p>}
 
@@ -37,7 +38,7 @@ export default function JobList({
 					{jobs.map((job) => (
 						<li
 							key={job.id}
-							className="border rounded-lg p-3 flex items-center justify-between"
+							className="border rounded-lg p-3 flex items-center justify-between gap-3"
 						>
 							<div>
 								<p className="font-medium text-sm">{job.id}</p>
@@ -45,7 +46,19 @@ export default function JobList({
 									Attempt {job.attempt} / {job.maxAttempts}
 								</p>
 							</div>
-							<JobStatusBadge status={job.status} />
+							<div className="flex items-center gap-3">
+								<JobStatusBadge status={job.status} />
+								<button
+									onClick={() =>
+										navigate(
+											`/logs?mode=job&id=${encodeURIComponent(job.id)}`,
+										)
+									}
+									className="border border-sky-500 text-sky-600 hover:bg-sky-50 transition px-3 py-1 rounded text-sm"
+								>
+									View Logs
+								</button>
+							</div>
 						</li>
 					))}
 				</ul>

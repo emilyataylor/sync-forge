@@ -23,9 +23,7 @@ export default function Jobs() {
 			} catch (err) {
 				setJobs([]);
 				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to load jobs",
+					err instanceof Error ? err.message : "Failed to load jobs",
 				);
 			} finally {
 				setLoading(false);
