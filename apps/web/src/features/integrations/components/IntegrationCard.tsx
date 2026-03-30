@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import type { Job } from "@syncforge/types";
 import { getJob, syncIntegration } from "../../../client";
 import JobStatusBadge from "../../jobs/components/JobStatusBadge";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
 	integration: Integration;
 };
 
 export default function IntegrationCard({ integration }: Props) {
+	const navigate = useNavigate();
 	const [integrationJobs, setIntegrationJobs] = useState<
 		Record<string, string>
 	>({});
@@ -57,13 +59,35 @@ export default function IntegrationCard({ integration }: Props) {
 				</p>
 			</div>
 
-			<button
-				disabled={job?.status === "PROCESSING"}
-				onClick={handleSync}
-				className="bg-blue-500 hover:bg-blue-600 transition text-white px-3 py-1 rounded disabled:opacity-75"
-			>
-				Trigger Sync
-			</button>
+			<div className="flex gap-2">
+				<button
+					disabled={job?.status === "PROCESSING"}
+					onClick={handleSync}
+					className="flex-1 bg-blue-500 hover:bg-blue-600 transition text-white px-3 py-1 rounded disabled:opacity-75"
+				>
+					Trigger Sync
+				</button>
+				<button
+					onClick={() =>
+						navigate(
+							`/logs?mode=integration&id=${encodeURIComponent(integration.id)}`,
+						)
+					}
+					className="flex-1 border border-sky-500 text-sky-600 hover:bg-sky-50 transition px-3 py-1 rounded"
+				>
+					View Logs
+				</button>
+				<button
+					onClick={() =>
+						navigate(
+							`/jobs?integrationId=${encodeURIComponent(integration.id)}`,
+						)
+					}
+					className="flex-1 border border-indigo-500 text-indigo-600 hover:bg-indigo-50 transition px-3 py-1 rounded"
+				>
+					View Jobs
+				</button>
+			</div>
 		</div>
 	);
 }

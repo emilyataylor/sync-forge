@@ -15,6 +15,36 @@ const mapIntegrationRow = (row: {
 	createdAt: new Date(row.created_at).toISOString(),
 });
 
+const mapLogRow = (row: {
+	id: string;
+	job_id: string;
+	message: string | null;
+	level: "INFO" | "ERROR";
+	timestamp: Date | string;
+}) => ({
+	id: row.id,
+	jobId: row.job_id,
+	message: row.message ?? "",
+	level: row.level,
+	timestamp: new Date(row.timestamp).toISOString(),
+});
+
+const mapJobRow = (row: {
+	id: string;
+	integration_id: string;
+	status: string;
+	attempts: number;
+	max_attempts: number;
+	created_at: Date | string;
+}) => ({
+	id: row.id,
+	integrationId: row.integration_id,
+	status: row.status,
+	attempt: row.attempts,
+	maxAttempts: row.max_attempts,
+	createdAt: new Date(row.created_at).toISOString(),
+});
+
 export const listIntegrations = async (
 	req: Request,
 	res: Response,
@@ -85,6 +115,51 @@ export const syncIntegration = async (
 		const result = await triggerIntegrationSync(id);
 
 		return res.json({ jobId: result.jobId });
+	} catch (error) {
+		return next(error);
+	}
+};
+
+export const getIntegrationLogs = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const { id } = req.params;
+
+		const result = await pool.query(
+			`SELECT l.id, l.job_id, l.message, l.level, l.timestamp
+			 FROM logs l
+			 INNER JOIN jobs j ON j.id = l.job_id
+			 WHERE j.integration_id::text = $1
+			 ORDER BY l.timestamp DESC`,
+			[id],
+		);
+
+		return res.json(result.rows.map(mapLogRow));
+	} catch (error) {
+		return next(error);
+	}
+};
+
+export const getIntegrationJobs = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const { id } = req.params;
+
+		const result = await pool.query(
+			`SELECT id, integration_id, status, attempts, max_attempts, created_at
+			 FROM jobs
+			 WHERE integration_id::text = $1
+			 ORDER BY created_at DESC`,
+			[id],
+		);
+
+		return res.json(result.rows.map(mapJobRow));
 	} catch (error) {
 		return next(error);
 	}
