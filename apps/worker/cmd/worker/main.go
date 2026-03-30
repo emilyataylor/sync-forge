@@ -22,11 +22,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	err = ensureSchema()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Println("Connected to Postgres")
 	
 	client := queue.NewRedisClient()
 
 	log.Println("Starting SyncForge Worker...")
 
-	worker.Start(client)
+	worker.Start(client, db)
 }

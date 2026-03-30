@@ -8,10 +8,11 @@ import (
 
 	"syncforge/worker/internal/jobs"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/redis/go-redis/v9"
 )
 
-func Start(client *redis.Client) {
+func Start(client *redis.Client, db *pgx.Conn) {
 	ctx := context.Background()
 
 	log.Println("[Worker] Started")
@@ -33,21 +34,23 @@ func Start(client *redis.Client) {
 		}
 
 		log.Println("[Worker] Processing job:", job.IntegrationID)
+		insertJobLog(db, job.ID, "INFO", "Worker picked up job")
 
 		job.Status = jobs.StatusProcessing
-		updateJobStatus(client, job)
+		updateJobStatus(db, job)
 
 		err = processJob(job)
 
 		if err != nil {
 			log.Println("[Worker] Job failed:", job.IntegrationID, "Attempt:", job.Attempt)
+			insertJobLog(db, job.ID, "ERROR", err.Error())
 
 			if job.Attempt < job.MaxAttempts {
 				job.Attempt++
 
 				job.Status = jobs.StatusPending
 
-				updateJobStatus(client, job)
+				updateJobStatus(db, job)
 
 				// Exponential backoff to avoid instant retries
 				delay := time.Duration(1<<job.Attempt) * time.Second
@@ -65,7 +68,8 @@ func Start(client *redis.Client) {
 				log.Println("[Worker] Job permanently failed:", job.IntegrationID)
 
 				job.Status = jobs.StatusFailed
-				updateJobStatus(client, job)
+				updateJobStatus(db, job)
+				insertJobLog(db, job.ID, "ERROR", "Job permanently failed")
 
 				// dead letter queue for permanently failed jobs
 				updatedJobJSON, _ := json.Marshal(job)
@@ -76,6 +80,7 @@ func Start(client *redis.Client) {
 		}
 
 		job.Status = jobs.StatusCompleted
-		updateJobStatus(client, job)
+		updateJobStatus(db, job)
+		insertJobLog(db, job.ID, "INFO", "Job completed successfully")
 	}
 }

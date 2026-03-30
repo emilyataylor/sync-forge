@@ -18,5 +18,6 @@ WORKDIR /app
 COPY apps/api/package*.json ./
 RUN npm install --production
 COPY --from=builder /repo/apps/api/dist ./dist
+COPY --from=builder /repo/apps/api/src/db/schema.sql ./dist/db/schema.sql
 EXPOSE 3000
 CMD [ "node", "dist/index.js" ]

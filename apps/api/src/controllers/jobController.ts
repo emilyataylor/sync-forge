@@ -1,19 +1,42 @@
-import Redis from "ioredis";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+import { pool } from "../db";
 
-const redis = new Redis({
-	host: process.env.REDIS_HOST || "localhost",
-	port: Number(process.env.REDIS_PORT || 6379),
+const mapJobRow = (row: {
+	id: string;
+	integration_id: string;
+	status: string;
+	attempts: number;
+	max_attempts: number;
+	created_at: Date | string;
+}) => ({
+	id: row.id,
+	integrationId: row.integration_id,
+	status: row.status,
+	attempt: row.attempts,
+	maxAttempts: row.max_attempts,
+	createdAt: new Date(row.created_at).toISOString(),
 });
 
-export const getJob = async (req: Request, res: Response) => {
-	const { id } = req.params;
+export const getJob = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const { id } = req.params;
+		const result = await pool.query(
+			`SELECT id, integration_id, status, attempts, max_attempts, created_at
+			 FROM jobs
+			 WHERE id = $1`,
+			[id],
+		);
 
-	const data = await redis.get(`job:${id}`);
+		if (result.rowCount === 0) {
+			return res.status(404).json({ error: "Job not found" });
+		}
 
-	if (!data) {
-		return res.status(404).json({ error: "Job not found" });
+		return res.json(mapJobRow(result.rows[0]));
+	} catch (error) {
+		return next(error);
 	}
-
-	return res.json(JSON.parse(data));
 };
