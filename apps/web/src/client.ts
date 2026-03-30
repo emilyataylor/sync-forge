@@ -29,6 +29,15 @@ export async function syncIntegration(id: string) {
 	return res.json();
 }
 
+export async function getIntegrationApiKey(id: string) {
+	const res = await fetch(`${BASE_URL}/integrations/${id}/api-key`);
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({}));
+		throw new Error(body?.error ?? "Failed to fetch integration API key");
+	}
+	return res.json() as Promise<{ api_key: string }>;
+}
+
 export async function getJob(id: string) {
 	const res = await fetch(`${BASE_URL}/jobs/${id}`);
 	if (!res.ok) return null;

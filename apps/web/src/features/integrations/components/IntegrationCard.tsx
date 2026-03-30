@@ -1,7 +1,7 @@
 import type { Integration } from "../types";
 import { useEffect, useState } from "react";
 import type { Job } from "@syncforge/types";
-import { getJob, syncIntegration } from "../../../client";
+import { getIntegrationApiKey, getJob, syncIntegration } from "../../../client";
 import JobStatusBadge from "../../jobs/components/JobStatusBadge";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +15,34 @@ export default function IntegrationCard({ integration }: Props) {
 		Record<string, string>
 	>({});
 	const [jobs, setJobs] = useState<Record<string, Job>>({});
+	const [revealedApiKey, setRevealedApiKey] = useState<string | null>(null);
+	const [isApiKeyLoading, setIsApiKeyLoading] = useState(false);
+	const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+	const hiddenMask = "••••••••••••";
+
+	const handleToggleApiKey = async () => {
+		if (revealedApiKey) {
+			setRevealedApiKey(null);
+			setApiKeyError(null);
+			return;
+		}
+
+		setIsApiKeyLoading(true);
+		setApiKeyError(null);
+		try {
+			const data = await getIntegrationApiKey(integration.id);
+			setRevealedApiKey(data.api_key);
+		} catch (error) {
+			setApiKeyError(
+				error instanceof Error
+					? error.message
+					: "Failed to load API key",
+			);
+		} finally {
+			setIsApiKeyLoading(false);
+		}
+	};
+
 	const handleSync = async () => {
 		alert("Sync triggered!"); // replace this with a toast notification in the future
 		await syncIntegration(integration.id)
@@ -51,6 +79,29 @@ export default function IntegrationCard({ integration }: Props) {
 			<div className="flex-1">
 				<h3 className="font-semibold text-lg">{integration.name}</h3>
 				<p className="text-sm text-gray-500">{integration.type}</p>
+				<div className="mt-2">
+					<p className="text-xs text-gray-500">API Key</p>
+					<p className="font-mono text-sm break-all">
+						{revealedApiKey ?? hiddenMask}
+					</p>
+					{apiKeyError ? (
+						<p className="text-xs text-red-600 mt-1">
+							{apiKeyError}
+						</p>
+					) : null}
+					<button
+						type="button"
+						onClick={handleToggleApiKey}
+						disabled={isApiKeyLoading}
+						className="mt-2 text-xs border border-gray-300 hover:bg-gray-50 transition px-2 py-1 rounded disabled:opacity-60"
+					>
+						{isApiKeyLoading
+							? "Loading..."
+							: revealedApiKey
+								? "Hide API Key"
+								: "Reveal API Key"}
+					</button>
+				</div>
 			</div>
 			<div className="flex flex-col items-center gap-2">
 				<JobStatusBadge status={job?.status || "IDLE"} />

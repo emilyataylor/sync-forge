@@ -164,3 +164,33 @@ export const getIntegrationJobs = async (
 		return next(error);
 	}
 };
+
+export const getIntegrationApiKey = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		const encryptionKey = process.env.API_ENCRYPTION_KEY;
+		if (!encryptionKey) {
+			throw new Error("API_ENCRYPTION_KEY is required");
+		}
+
+		const { id } = req.params;
+
+		const result = await pool.query(
+			`SELECT pgp_sym_decrypt(api_key, $2)::text AS api_key
+			 FROM integrations
+			 WHERE id::text = $1`,
+			[id, encryptionKey],
+		);
+
+		if (result.rowCount === 0) {
+			return res.status(404).json({ error: "Integration not found" });
+		}
+
+		return res.json({ api_key: result.rows[0].api_key as string });
+	} catch (error) {
+		return next(error);
+	}
+};
